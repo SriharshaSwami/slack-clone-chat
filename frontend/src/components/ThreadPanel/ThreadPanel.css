@@ -1,0 +1,109 @@
+.thread-panel {
+  width: 340px;
+  min-width: 340px;
+  border-left: 1px solid var(--chat-border);
+  background: var(--chat-bg);
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.2s ease;
+}
+@keyframes slideIn {
+  from { transform: translateX(20px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.tp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--chat-border);
+}
+.tp-header h4 { font-size: 15px; font-weight: 700; }
+.tp-close {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--chat-text-secondary);
+  transition: all var(--transition);
+}
+.tp-close:hover { background: #F0F0F0; color: var(--chat-text); }
+
+.tp-original {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--chat-border);
+  font-size: 14px;
+}
+.tp-original strong { display: block; font-size: 13px; margin-bottom: 2px; }
+.tp-original p { color: var(--chat-text); line-height: 1.4; }
+
+.tp-divider {
+  padding: 8px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--chat-text-secondary);
+  border-bottom: 1px solid var(--chat-border);
+}
+
+.tp-replies { flex: 1; overflow-y: auto; padding: 8px 16px; }
+
+.tp-reply {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+}
+.tp-reply-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--slack-blue);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.tp-reply-body { flex: 1; min-width: 0; }
+.tp-reply-meta { display: flex; align-items: baseline; gap: 6px; }
+.tp-reply-name { font-size: 13px; font-weight: 700; }
+.tp-reply-time { font-size: 10px; color: var(--chat-timestamp); }
+.tp-reply-text { font-size: 13px; line-height: 1.4; margin-top: 1px; }
+
+.tp-input {
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px 12px;
+  border-top: 1px solid var(--chat-border);
+}
+.tp-input textarea {
+  flex: 1;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 13px;
+  resize: none;
+  min-height: 20px;
+}
+.tp-input textarea:focus {
+  border-color: var(--input-focus-border);
+  box-shadow: 0 0 0 1px var(--input-focus-border);
+}
+.tp-input button {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--slack-blue);
+  color: #fff;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.tp-input button:disabled { opacity: 0.35; }

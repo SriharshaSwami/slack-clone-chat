@@ -1,27 +1,107 @@
-import express from "express"
-import http from "http"
-import { Server } from "socket.io"
-import cors from "cors"
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import dotenv from 'dotenv';
 
-const app = express()
+import connectDB from './config/db.js';
+import socketHandler from './sockets/socketHandler.js';
+import errorMiddleware from './middleware/errorMiddleware.js';
 
-app.use(cors())
-app.use(express.json())
+import authRoutes from './routes/authRoutes.js';
+import channelRoutes from './routes/channelRoutes.js';
+import messageRoutes from './routes/messageRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
-const server = http.createServer(app)
+dotenv.config();
 
-const io = new Server(server,{
-    cors:{origin:"*"}
-})
+console.log('🚀 Starting Sleek Backend...');
 
-io.on("connection",(socket)=>{
-    console.log("User connected:",socket.id)
-})
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error('🔥 Unhandled Rejection:', err);
+  process.exit(1);
+});
 
-app.get("/",(req,res)=>{
-    res.send("Server running")
-})
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('🔥 Uncaught Exception:', err.message);
+  process.exit(1);
+});
 
-server.listen(5000,()=>{
-    console.log("Server running on port 5000")
-})
+// Graceful shutdown
+const gracefulShutdown = (signal) => {
+  console.log(`\n🛑 ${signal} received. Shutting down...`);
+  server.close(async () => {
+    const mongoose = (await import('mongoose')).default;
+    await mongoose.connection.close();
+    console.log('🔌 MongoDB connection closed. Exit.');
+    process.exit(0);
+  });
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// ── Express App ──
+const app = express();
+const server = http.createServer(app);
+
+// ── Socket.IO ──
+const io = new Server(server, {
+  cors: {
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+  },
+});
+app.set('io', io);
+
+// ── Middleware ──
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true,
+}));
+app.use(cookieParser());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ── API Routes ──
+app.use('/api/auth', authRoutes);
+app.use('/api/channels', channelRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/users', userRoutes);
+
+// ── Health Check ──
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// ── Error Handler (must be after routes) ──
+app.use(errorMiddleware);
+
+// ── Socket Handler ──
+socketHandler(io);
+
+// ── Start Server ──
+const PORT = process.env.PORT || 5000;
+
+const startServer = async () => {
+  try {
+    console.log('🔌 Connecting to MongoDB...');
+    await connectDB();
+    console.log('✅ Connected to MongoDB');
+
+    server.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`   API:    http://localhost:${PORT}/api`);
+      console.log(`   Health: http://localhost:${PORT}/api/health`);
+    });
+  } catch (err) {
+    console.error('🔥 Fatal error during startup:', err);
+    process.exit(1);
+  }
+};
+
+startServer();

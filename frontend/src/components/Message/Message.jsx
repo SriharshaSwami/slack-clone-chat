@@ -1,0 +1,160 @@
+import { useState, useRef, useEffect } from 'react';
+import EmojiPicker from 'emoji-picker-react';
+import './Message.css';
+
+const AVATAR_COLORS = ['#E01E5A', '#36C5F0', '#2EB67D', '#ECB22E', '#6B2FA0', '#E8912D', '#4A154B', '#1264A3'];
+
+function getColor(name) {
+  if (!name) return '#CCC';
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
+function formatTime(ts) {
+  if (!ts) return '';
+  return new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+const QUICK_EMOJIS = ['👍', '❤️', '😂', '👀'];
+
+const Message = ({ message, onReaction, onThreadOpen, onEdit, onDelete, onPin, onStar, currentUserId }) => {
+  const [showPicker, setShowPicker] = useState(false);
+  const [showCopied, setShowCopied] = useState(false);
+  const pickerRef = useRef(null);
+
+  const isOwn = String(message.senderId) === String(currentUserId);
+  const isStarred = message.starredBy?.some(id => String(id) === String(currentUserId));
+  const msgId = message._id || message.id;
+
+  // Read status logic
+  const isSeenByOthers = message.seenBy?.some(s => String(s.userId) !== String(message.senderId));
+  const statusIcon = message.status === 'seen' || isSeenByOthers ? '✓✓' : (message.status === 'delivered' ? '✓✓' : '✓');
+  const statusColor = (message.status === 'seen' || isSeenByOthers) ? '#36C5F0' : '#888';
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (pickerRef.current && !pickerRef.current.contains(event.target)) {
+        setShowPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleEmojiClick = (emojiObject) => {
+    onReaction?.(msgId, emojiObject.emoji);
+    setShowPicker(false);
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message.text);
+    setShowCopied(true);
+    setTimeout(() => setShowCopied(false), 2000);
+  };
+
+  return (
+    <div className={`message-item ${message.isPinned ? 'pinned' : ''}`}>
+      <div className="msg-avatar" style={{ background: getColor(message.senderName) }}>
+        {(message.senderName || '?')[0].toUpperCase()}
+      </div>
+      <div className="msg-body">
+        <div className="msg-meta">
+          <span className="msg-sender">{message.senderName}</span>
+          <span className="msg-time">{formatTime(message.timestamp)}</span>
+          {message.isEdited && (
+            <span
+              className="msg-edited"
+              title={`Last edited: ${formatTime(message.updatedAt || message.timestamp)}`}
+            >
+              (edited)
+            </span>
+          )}
+          {message.isPinned && (
+            <span className="msg-pinned-badge" title="Pinned message">📌Pinned</span>
+          )}
+          {isStarred && (
+            <span className="msg-starred-badge" title="Starred message">⭐Starred</span>
+          )}
+          
+          {/* Status ticks for my messages */}
+          {isOwn && (
+            <span className="msg-status" style={{ color: statusColor, fontSize: '10px', marginLeft: 'auto' }} title={message.status}>
+              {statusIcon}
+            </span>
+          )}
+        </div>
+        <div className="msg-text">{message.text}</div>
+
+        {/* Message Actions: Edit, Delete, Reply */}
+        <div className="msg-inline-actions">
+          {isOwn && (
+            <>
+              <button className="inline-action-btn" onClick={() => onEdit?.(message)}>Edit</button>
+              <button className="inline-action-btn delete" onClick={() => onDelete?.(msgId)}>Delete</button>
+            </>
+          )}
+          {message.threadReplies !== undefined && (
+            <button
+              className={`inline-action-btn ${message.threadReplies > 0 ? 'has-replies' : ''}`}
+              onClick={() => onThreadOpen?.(message)}
+            >
+              {message.threadReplies > 0
+                ? `${message.threadReplies} ${message.threadReplies === 1 ? 'reply' : 'replies'}`
+                : 'Reply'}
+            </button>
+          )}
+          <button
+            className={`inline-action-btn ${message.isPinned ? 'has-pin' : ''}`}
+            onClick={() => onPin?.(msgId)}
+          >
+            {message.isPinned ? 'Unpin' : 'Pin'}
+          </button>
+        </div>
+
+        {/* Reactions */}
+        {message.reactions?.length > 0 && (
+          <div className="msg-reactions">
+            {message.reactions.map((r, i) => (
+              <button
+                key={i}
+                className={`reaction-chip ${r.users.some(uid => String(uid) === String(currentUserId)) ? 'own' : ''}`}
+                onClick={() => onReaction?.(msgId, r.emoji)}
+              >
+                {r.emoji} {r.users.length}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Action bar on hover */}
+        <div className={`msg-actions ${showPicker ? 'active' : ''}`}>
+          <div style={{ position: 'relative' }}>
+            <button
+              className="action-btn"
+              onClick={() => setShowPicker(!showPicker)}
+              title="Add reaction"
+            >➕</button>
+            {showPicker && (
+              <div ref={pickerRef} style={{ position: 'absolute', bottom: '100%', right: 0, zIndex: 1000, marginBottom: '5px' }}>
+                <EmojiPicker onEmojiClick={handleEmojiClick} width={300} height={400} />
+              </div>
+            )}
+          </div>
+          {QUICK_EMOJIS.map(e => (
+            <button key={e} className="action-btn" onClick={() => onReaction?.(msgId, e)} title={e}>{e}</button>
+          ))}
+          
+          <button className="action-btn" onClick={handleCopy} title="Copy text">📋</button>
+          <button className={`action-btn ${isStarred ? 'active' : ''}`} onClick={() => onStar?.(msgId)} title={isStarred ? 'Unstar' : 'Star'}>
+            {isStarred ? '⭐' : '☆'}
+          </button>
+
+          {showCopied && <div className="msg-copied-toast">Copied!</div>}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Message;

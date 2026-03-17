@@ -1,0 +1,20 @@
+.channels-list-feature { padding: 20px; }
+.channels-list-feature h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+
+.cl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+
+.cl-card {
+  background: #fff;
+  border: 1px solid var(--chat-border);
+  border-radius: var(--radius);
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.cl-card:hover { border-color: var(--slack-blue); box-shadow: var(--shadow-sm); }
+.cl-card.active { border-color: var(--slack-blue); background: rgba(18,100,163,0.04); }
+
+.cl-card-icon { font-size: 22px; margin-bottom: 8px; }
+.cl-card-info h4 { font-size: 14px; font-weight: 700; }
+.cl-card-info p { font-size: 12px; color: var(--chat-text-secondary); margin-top: 2px; }
+.cl-members { font-size: 11px; color: var(--chat-timestamp); margin-top: 6px; display: block; }

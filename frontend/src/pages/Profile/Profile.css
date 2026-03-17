@@ -1,0 +1,81 @@
+.profile-page {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(165deg, #F8F0FF 0%, #FFFFFF 40%, #F0F8FF 100%);
+  padding: 40px 20px;
+  overflow-y: auto;
+}
+
+.profile-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 40px 36px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--chat-border);
+  text-align: center;
+}
+
+.profile-avatar-lg {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--slack-aubergine), var(--slack-blue));
+  color: #fff;
+  font-size: 28px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.profile-card h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.profile-role {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: rgba(18, 100, 163, 0.1);
+  color: var(--slack-blue);
+  margin-bottom: 24px;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+.profile-form .form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--chat-text);
+}
+.profile-form .form-group input {
+  padding: 10px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  width: 100%;
+  transition: all var(--transition);
+}
+.profile-form .form-group input:focus {
+  border-color: var(--input-focus-border);
+  box-shadow: 0 0 0 3px rgba(18, 100, 163, 0.12);
+}
+.profile-form .form-group input:disabled {
+  background: #F8F8F8;
+  color: var(--chat-text-secondary);
+}

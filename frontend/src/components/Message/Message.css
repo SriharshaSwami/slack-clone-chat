@@ -1,0 +1,191 @@
+.message-item {
+  display: flex;
+  gap: 10px;
+  padding: 6px 20px;
+  border-radius: var(--radius);
+  position: relative;
+  transition: background var(--transition);
+}
+.message-item:hover { background: var(--chat-hover); }
+
+.msg-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.msg-body { flex: 1; min-width: 0; }
+
+.msg-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.msg-sender {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--chat-text);
+  cursor: pointer;
+}
+.msg-sender:hover { text-decoration: underline; }
+.msg-time {
+  font-size: 11px;
+  color: var(--chat-timestamp);
+}
+.msg-edited {
+  font-size: 11px;
+  color: var(--chat-timestamp);
+  font-style: italic;
+}
+
+.msg-pinned-badge {
+  font-size: 11px;
+  color: #D3A10A; /* Yellowish/gold for pins */
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+.message-item.pinned {
+  background: rgba(211, 161, 10, 0.05); /* very light yellow tint */
+}
+.message-item.pinned:hover {
+  background: rgba(211, 161, 10, 0.1);
+}
+
+.msg-text {
+  font-size: 14.5px;
+  line-height: 1.46;
+  color: var(--chat-text);
+  word-wrap: break-word;
+  margin-top: 1px;
+}
+
+.msg-inline-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.inline-action-btn {
+  font-size: 11px;
+  color: var(--chat-text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.inline-action-btn:hover {
+  text-decoration: underline;
+  color: var(--slack-blue);
+}
+.inline-action-btn.delete:hover {
+  color: var(--slack-red);
+}
+
+/* Reactions */
+.msg-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.reaction-chip {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--chat-border);
+  background: var(--chat-hover);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.reaction-chip:hover { border-color: var(--slack-blue); }
+.reaction-chip.own {
+  background: rgba(18, 100, 163, 0.1);
+  border-color: var(--slack-blue);
+}
+
+/* Hover action bar */
+.msg-actions {
+  display: none;
+  position: absolute;
+  top: -12px;
+  right: 20px;
+  background: #fff;
+  border: 1px solid var(--chat-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 2px;
+  gap: 0;
+}
+.message-item:hover .msg-actions,
+.msg-actions.active {
+  display: flex;
+}
+
+.action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: background var(--transition);
+}
+.action-btn:hover { background: #F0F0F0; }
+
+.inline-action-btn.has-replies,
+.inline-action-btn.has-pin {
+  color: var(--slack-blue);
+  font-weight: 600;
+}
+
+.msg-starred-badge {
+  font-size: 11px;
+  color: #ECB22E;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.msg-status {
+  font-weight: bold;
+  letter-spacing: -1px;
+}
+
+.msg-copied-toast {
+  position: absolute;
+  top: -30px;
+  right: 0;
+  background: #333;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  animation: fadeInOut 2s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(5px); }
+  15% { opacity: 1; transform: translateY(0); }
+  85% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-5px); }
+}
+
+.action-btn.active {
+  color: #ECB22E;
+  background: rgba(236, 178, 46, 0.1);
+}

@@ -1,0 +1,22 @@
+.dashboard-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.role-banner {
+  background: linear-gradient(90deg, var(--slack-aubergine), var(--slack-blue));
+  color: #fff;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+
+.dashboard-main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
