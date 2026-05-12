@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useModal } from '../common/useModal.jsx';
 import { useChat } from '../../store/ChatContext';
 import { channelAPI } from '../../services/api';
 
@@ -6,6 +7,8 @@ const AdminRequests = ({ onClose }) => {
   const { refreshChannels } = useChat();
   const [channelsWithRequests, setChannelsWithRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [modal, showModal] = useModal();
 
   const fetchAllRequests = async () => {
     try {
@@ -30,17 +33,17 @@ const AdminRequests = ({ onClose }) => {
   const handleApprove = async (chId, userId) => {
     try {
       await channelAPI.approveJoin(chId, userId);
-      // Refresh local requests list
       fetchAllRequests();
-      // Refresh global sidebar channels
       await refreshChannels();
-      alert('Approved successfully!');
+      showModal('Approved successfully!', 'Success');
     } catch (e) {
-      alert('Failed to approve: ' + e.message);
+      showModal('Failed to approve: ' + e.message, 'Error');
     }
   };
 
   return (
+    <>
+      {modal}
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, color: '#333'
@@ -84,6 +87,7 @@ const AdminRequests = ({ onClose }) => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

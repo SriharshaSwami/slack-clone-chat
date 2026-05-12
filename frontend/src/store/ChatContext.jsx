@@ -105,9 +105,17 @@ export function ChatProvider({ children }) {
       // Setup room-specific listeners
       const onNewMsg = (msg) => {
         if (activeChannel) {
-          setMessages(prev => ({ ...prev, [channelId]: [...(prev[channelId] || []), msg] }));
+          setMessages(prev => {
+            const arr = prev[channelId] || [];
+            if (arr.some(m => m._id === msg._id)) return prev;
+            return { ...prev, [channelId]: [...arr, msg] };
+          });
         } else {
-          setDmMessages(prev => ({ ...prev, [channelId]: [...(prev[channelId] || []), msg] }));
+          setDmMessages(prev => {
+            const arr = prev[channelId] || [];
+            if (arr.some(m => m._id === msg._id)) return prev;
+            return { ...prev, [channelId]: [...arr, msg] };
+          });
         }
       };
       
@@ -224,6 +232,14 @@ export function ChatProvider({ children }) {
   const sendMessage = useCallback(async (channelId, text, senderName, senderId) => {
     try {
       const msg = await messageAPI.send({ channelId, text });
+      
+      // Optimistically/Locally update the state so the sender sees it immediately
+      setMessages(prev => {
+        const arr = prev[channelId] || [];
+        if (arr.some(m => m._id === msg._id)) return prev;
+        return { ...prev, [channelId]: [...arr, msg] };
+      });
+      
       socket.emit('broadcast_new_message', msg);
     } catch (e) {
       console.error('Failed to send message', e);
@@ -288,6 +304,14 @@ export function ChatProvider({ children }) {
   const sendDMMessage = useCallback(async (dmId, text, senderName, senderId) => {
     try {
       const msg = await messageAPI.send({ channelId: dmId, text });
+
+      // Optimistically/Locally update the state
+      setDmMessages(prev => {
+        const arr = prev[dmId] || [];
+        if (arr.some(m => m._id === msg._id)) return prev;
+        return { ...prev, [dmId]: [...arr, msg] };
+      });
+
       socket.emit('broadcast_new_message', msg);
     } catch (e) {
       console.error('Failed to send DM', e);
