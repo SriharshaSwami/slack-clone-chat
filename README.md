@@ -92,7 +92,7 @@ Use the following credentials to log in and test the application. Replace the pl
 | :--- | :--- | :--- |
 | **Test User 1** | `testuser1@gmail.com` | `testuser1` |
 | **Test User 2** | `testuser2@gmail.com` | `testuser2` |
-| **Admin**| `sriharshaswamy@gamil.com` | `sriharsha@2004` |
+| **Admin**| `testadmin@gmail.com` | `testadmin` |
 
 ## 📜 License
 This project is licensed under the ISC License.
