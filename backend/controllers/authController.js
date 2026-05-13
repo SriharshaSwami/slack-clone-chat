@@ -20,8 +20,6 @@ export const register = async (req, res) => {
       role: 'user', // Always default to 'user' for safety
     });
 
-    // Add new user to all existing public channels so they show up in members list
-    await Channel.updateMany({ isPrivate: false }, { $addToSet: { members: user._id } });
 
     const token = generateToken(user._id, user.role);
 

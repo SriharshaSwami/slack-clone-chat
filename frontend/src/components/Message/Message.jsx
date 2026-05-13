@@ -18,7 +18,7 @@ function formatTime(ts) {
 
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '👀'];
 
-const Message = ({ message, onReaction, onThreadOpen, onEdit, onDelete, onPin, onStar, currentUserId }) => {
+const Message = ({ message, onReaction, onThreadOpen, onEdit, onDelete, onPin, onStar, currentUserId, channelMembersCount }) => {
   const [showPicker, setShowPicker] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
   const pickerRef = useRef(null);
@@ -28,9 +28,28 @@ const Message = ({ message, onReaction, onThreadOpen, onEdit, onDelete, onPin, o
   const msgId = message._id || message.id;
 
   // Read status logic
-  const isSeenByOthers = message.seenBy?.some(s => String(s.userId) !== String(message.senderId));
-  const statusIcon = message.status === 'seen' || isSeenByOthers ? '✓✓' : (message.status === 'delivered' ? '✓✓' : '✓');
-  const statusColor = (message.status === 'seen' || isSeenByOthers) ? '#36C5F0' : '#888';
+  const seenByOthersCount = new Set(
+    message.seenBy?.filter(s => String(s.userId) !== String(message.senderId)).map(s => String(s.userId))
+  ).size;
+  
+  // Exclude the sender themselves from the required count
+  const requiredSeenCount = Math.max(1, (channelMembersCount || 2) - 1);
+  const allSeen = seenByOthersCount >= requiredSeenCount;
+  const isDelivered = message.status === 'delivered' || message.status === 'seen' || seenByOthersCount > 0;
+
+  let statusIcon = '✓';
+  let statusColor = '#888';
+
+  if (allSeen) {
+    statusIcon = '✓✓';
+    statusColor = '#36C5F0'; // Blue
+  } else if (isDelivered) {
+    statusIcon = '✓✓';
+    statusColor = '#888'; // Gray double tick
+  } else {
+    statusIcon = '✓';
+    statusColor = '#888'; // Gray single tick
+  }
 
   useEffect(() => {
     const handleClickOutside = (event) => {

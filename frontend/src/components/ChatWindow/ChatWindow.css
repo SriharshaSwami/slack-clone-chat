@@ -40,6 +40,18 @@
   min-width: 0;
 }
 .cw-icon { font-size: 16px; color: var(--chat-text-secondary); }
+
+.cw-hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--chat-text-secondary);
+  margin-right: 8px;
+}
+.cw-hamburger-btn:hover { color: var(--chat-text); }
+
 .cw-title {
   font-size: 16px;
   font-weight: 700;
@@ -278,3 +290,33 @@
   padding: 0;
 }
 .unpin-btn:hover { text-decoration: underline; }
+
+/* ── Responsive Chat Window ── */
+@media (max-width: 768px) {
+  .cw-hamburger-btn {
+    display: block;
+  }
+  
+  .chat-window.has-sidebar {
+    position: relative;
+  }
+  
+  .cw-sidebar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    z-index: 50;
+    border-left: none;
+    box-shadow: -4px 0 12px rgba(0,0,0,0.1);
+  }
+  
+  .cw-header {
+    padding: 8px 12px;
+  }
+  
+  .cw-input-wrapper {
+    padding: 0 12px 12px;
+  }
+}

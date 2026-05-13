@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAuth } from '../../store/AuthContext';
 import Sidebar from '../../components/Sidebar/Sidebar';
 import ChatWindow from '../../components/ChatWindow/ChatWindow';
@@ -8,6 +9,7 @@ import './Dashboard.css';
 const Dashboard = () => {
   const { user } = useAuth();
   const { activeThread } = useChat();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
     <div className="dashboard-layout">
@@ -20,8 +22,8 @@ const Dashboard = () => {
       )}
 
       <div className="dashboard-main">
-        <Sidebar />
-        <ChatWindow />
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <ChatWindow toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
         {activeThread && <ThreadPanel />}
       </div>
     </div>

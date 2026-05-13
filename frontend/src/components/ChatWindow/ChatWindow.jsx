@@ -5,7 +5,7 @@ import Message from '../Message/Message';
 import EmojiPicker from 'emoji-picker-react';
 import './ChatWindow.css';
 
-const ChatWindow = () => {
+const ChatWindow = ({ toggleSidebar }) => {
   const { user } = useAuth();
   const {
     activeChannel, activeDM, dmConversations,
@@ -123,6 +123,7 @@ const ChatWindow = () => {
         {/* Header */}
         <div className="cw-header">
           <div className="cw-header-left">
+            <button className="cw-hamburger-btn" onClick={toggleSidebar}>☰</button>
             <span className="cw-icon">{isChannel ? (activeChannel.isPrivate ? '🔒' : '#') : '●'}</span>
             <h3 className="cw-title">{chatName}</h3>
             {isChannel && activeChannel.description && (
@@ -157,6 +158,7 @@ const ChatWindow = () => {
                 updatedAt: msg.updatedAt
               }}
               currentUserId={user?.id || user?._id}
+              channelMembersCount={isChannel ? (activeChannel?.members?.length || 0) : 2}
               onReaction={handleReaction}
               onThreadOpen={(m) => setActiveThread(m)}
               onEdit={handleEdit}

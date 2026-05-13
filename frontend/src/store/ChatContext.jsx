@@ -79,6 +79,17 @@ export function ChatProvider({ children }) {
       messageAPI.fetchStarred().then(setStarredMessages).catch(console.error);
     } else {
       socket.disconnect();
+      // Clear all state when user logs out
+      setChannels([]);
+      setActiveChannel(null);
+      setActiveDM(null);
+      setMessages({});
+      setAllUsers([]);
+      setDmConversations([]);
+      setDmMessages({});
+      setThreadReplies({});
+      setActiveThread(null);
+      setStarredMessages([]);
     }
 
     return () => {

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../store/AuthContext';
 import { useModal } from '../common/useModal.jsx';
 import { useChat } from '../../store/ChatContext';
 import { channelAPI } from '../../services/api';
 
 const AdminRequests = ({ onClose }) => {
+  const { user } = useAuth();
   const { refreshChannels } = useChat();
   const [channelsWithRequests, setChannelsWithRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,7 +15,10 @@ const AdminRequests = ({ onClose }) => {
   const fetchAllRequests = async () => {
     try {
       const channels = await channelAPI.list();
-      const requestsPromises = channels.map(async (ch) => {
+      const allowedChannels = channels.filter(ch => 
+        user?.role === 'admin' || ch.createdBy?._id === user?._id || ch.createdBy === user?._id
+      );
+      const requestsPromises = allowedChannels.map(async (ch) => {
         const requests = await channelAPI.listPending(ch._id);
         return { ...ch, requests };
       });
@@ -38,6 +43,16 @@ const AdminRequests = ({ onClose }) => {
       showModal('Approved successfully!', 'Success');
     } catch (e) {
       showModal('Failed to approve: ' + e.message, 'Error');
+    }
+  };
+
+  const handleReject = async (chId, userId) => {
+    try {
+      await channelAPI.rejectJoin(chId, userId);
+      fetchAllRequests();
+      showModal('Request rejected.', 'Success');
+    } catch (e) {
+      showModal('Failed to reject: ' + e.message, 'Error');
     }
   };
 
@@ -73,12 +88,20 @@ const AdminRequests = ({ onClose }) => {
                       <strong>{req.username}</strong>
                       <div style={{ fontSize: 12, color: '#888' }}>{req.email}</div>
                     </div>
-                    <button 
-                      onClick={() => handleApprove(ch._id, req._id)}
-                      style={{
-                        background: '#2EB67D', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontWeight: 600
-                      }}
-                    >Approve</button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button 
+                        onClick={() => handleReject(ch._id, req._id)}
+                        style={{
+                          background: 'transparent', color: '#E01E5A', border: '1px solid #E01E5A', padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontWeight: 600
+                        }}
+                      >Reject</button>
+                      <button 
+                        onClick={() => handleApprove(ch._id, req._id)}
+                        style={{
+                          background: '#2EB67D', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontWeight: 600
+                        }}
+                      >Approve</button>
+                    </div>
                   </div>
                 ))}
               </div>

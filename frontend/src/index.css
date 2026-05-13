@@ -52,7 +52,7 @@
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
-  --transition: 150ms ease;
+  --transition: 200ms ease-in-out;
 }
 
 /* ── Reset ── */
@@ -120,4 +120,12 @@ img { display: block; max-width: 100%; }
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   border: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+  ::-webkit-scrollbar { width: 4px; }
 }

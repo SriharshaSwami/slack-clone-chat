@@ -5,10 +5,7 @@ export const createChannel = async (req, res) => {
   try {
     const { name, description, isPrivate, members } = req.body;
 
-    // Check permissions: only admins can create non-DM channels
-    if (!name?.startsWith('dm-') && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Only admins can create standard channels' });
-    }
+    // Permissions: any authenticated user can create a standard channel.
 
     let initialMembers = [req.user._id];
     if (members && Array.isArray(members)) {
@@ -117,9 +114,10 @@ export const deleteChannel = async (req, res) => {
     const isDM = channel.name.startsWith('dm-');
     const isAdmin = req.user.role === 'admin';
     const isMember = channel.members.some(id => id.toString() === req.user._id.toString());
+    const isCreator = channel.createdBy.toString() === req.user._id.toString();
 
-    if (!isAdmin && !(isDM && isMember)) {
-      return res.status(403).json({ message: 'Access denied. You can only delete your own DM conversations, and only admins can delete public channels.' });
+    if (!isAdmin && !(isDM && isMember) && !isCreator) {
+      return res.status(403).json({ message: 'Access denied. Only the channel creator or an admin can delete this channel.' });
     }
 
     await Channel.findByIdAndDelete(req.params.id);
@@ -160,6 +158,13 @@ export const listPendingRequests = async (req, res) => {
     const channel = await Channel.findById(req.params.id).populate('waitingList', 'username email avatar');
     if (!channel) return res.status(404).json({ message: 'Channel not found' });
 
+    // Only admin or the creator of the channel can view requests
+    const isAdmin = req.user.role === 'admin';
+    const isCreator = channel.createdBy.toString() === req.user._id.toString();
+    if (!isAdmin && !isCreator) {
+      return res.status(403).json({ message: 'Access denied. Only the channel creator or an admin can view pending requests.' });
+    }
+
     res.json(channel.waitingList);
   } catch (error) {
     console.error('List requests error:', error.message);
@@ -173,6 +178,13 @@ export const approveJoinRequest = async (req, res) => {
     const { userId } = req.body;
     const channel = await Channel.findById(req.params.id);
     if (!channel) return res.status(404).json({ message: 'Channel not found' });
+
+    // Only admin or the creator of the channel can approve requests
+    const isAdmin = req.user.role === 'admin';
+    const isCreator = channel.createdBy.toString() === req.user._id.toString();
+    if (!isAdmin && !isCreator) {
+      return res.status(403).json({ message: 'Access denied. Only the channel creator or an admin can approve join requests.' });
+    }
 
     if (!channel.waitingList.some(id => id.toString() === userId)) {
       return res.status(404).json({ message: 'User request not found in waiting list' });
@@ -195,5 +207,42 @@ export const approveJoinRequest = async (req, res) => {
   } catch (error) {
     console.error('Approve request error:', error.message);
     res.status(500).json({ message: 'Server error approving request' });
+  }
+};
+
+// POST /api/channels/:id/reject
+export const rejectJoinRequest = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const channel = await Channel.findById(req.params.id);
+    if (!channel) return res.status(404).json({ message: 'Channel not found' });
+
+    // Only admin or the creator of the channel can reject requests
+    const isAdmin = req.user.role === 'admin';
+    const isCreator = channel.createdBy.toString() === req.user._id.toString();
+    if (!isAdmin && !isCreator) {
+      return res.status(403).json({ message: 'Access denied. Only the channel creator or an admin can reject join requests.' });
+    }
+
+    if (!channel.waitingList.some(id => id.toString() === userId)) {
+      return res.status(404).json({ message: 'User request not found in waiting list' });
+    }
+
+    // Remove from waitingList
+    channel.waitingList = channel.waitingList.filter(id => id.toString() !== userId);
+    await channel.save();
+
+    const updatedChannel = await Channel.findById(req.params.id).populate('members', 'username avatar');
+    
+    // Notify the user via Socket.IO
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('membership_updated', { userId, channelId: req.params.id, status: 'rejected' });
+    }
+
+    res.status(200).json(updatedChannel);
+  } catch (error) {
+    console.error('Reject request error:', error.message);
+    res.status(500).json({ message: 'Server error rejecting request' });
   }
 };

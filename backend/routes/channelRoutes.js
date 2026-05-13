@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createChannel, joinChannel, listChannels, getChannel, deleteChannel, requestJoinChannel, listPendingRequests, approveJoinRequest } from '../controllers/channelController.js';
+import { createChannel, joinChannel, listChannels, getChannel, deleteChannel, requestJoinChannel, listPendingRequests, approveJoinRequest, rejectJoinRequest } from '../controllers/channelController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import { isAdmin } from '../middleware/adminMiddleware.js';
 
@@ -14,8 +14,9 @@ router.get('/:id', getChannel);
 
 // Join mechanism
 router.post('/:id/request', requestJoinChannel);
-router.get('/:id/requests', isAdmin, listPendingRequests);
-router.post('/:id/approve', isAdmin, approveJoinRequest);
+router.get('/:id/requests', listPendingRequests);
+router.post('/:id/approve', approveJoinRequest);
+router.post('/:id/reject', rejectJoinRequest);
 
 // Maintaining legacy join for now or replacing it
 router.post('/:id/join', joinChannel); 

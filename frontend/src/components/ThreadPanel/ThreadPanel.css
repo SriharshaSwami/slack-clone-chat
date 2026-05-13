@@ -107,3 +107,17 @@
   flex-shrink: 0;
 }
 .tp-input button:disabled { opacity: 0.35; }
+
+/* ── Responsive Thread Panel ── */
+@media (max-width: 768px) {
+  .thread-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    z-index: 60;
+    border-left: none;
+    box-shadow: -4px 0 12px rgba(0,0,0,0.1);
+  }
+}

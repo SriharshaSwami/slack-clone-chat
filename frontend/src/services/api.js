@@ -45,6 +45,7 @@ export const channelAPI = {
   requestJoin: (id) => request(`/channels/${id}/request`, { method: 'POST' }),
   listPending: (id) => request(`/channels/${id}/requests`),
   approveJoin: (id, userId) => request(`/channels/${id}/approve`, { method: 'POST', body: JSON.stringify({ userId }) }),
+  rejectJoin:  (id, userId) => request(`/channels/${id}/reject`, { method: 'POST', body: JSON.stringify({ userId }) }),
   get:    (id)     => request(`/channels/${id}`),
 };
 
