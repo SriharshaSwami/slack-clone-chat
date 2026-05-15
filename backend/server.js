@@ -48,21 +48,21 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 const app = express();
 const server = http.createServer(app);
 
+// ── Middleware ──
+// Parse CLIENT_URL env as comma-separated list for CORS
+const allowedOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',').map(url => url.trim())
+  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
+
 // ── Socket.IO ──
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   },
 });
 app.set('io', io);
-
-// ── Middleware ──
-// Parse CLIENT_URL env as comma-separated list for CORS
-const allowedOrigins = process.env.CLIENT_URL
-  ? process.env.CLIENT_URL.split(',').map(url => url.trim())
-  : ['http://localhost:5000', 'http://localhost:5174'];
 
 app.use(cors({
   origin: function(origin, callback) {
