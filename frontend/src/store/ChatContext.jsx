@@ -257,6 +257,35 @@ export function ChatProvider({ children }) {
     }
   }, []);
 
+  const sendFileMessage = useCallback(async (channelId, file, text, isDMChannel = false) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('channelId', channelId);
+      if (text) formData.append('text', text);
+
+      const msg = await messageAPI.uploadFile(formData);
+
+      // Locally update the state
+      const updater = prev => {
+        const arr = prev[channelId] || [];
+        if (arr.some(m => m._id === msg._id)) return prev;
+        return { ...prev, [channelId]: [...arr, msg] };
+      };
+
+      if (isDMChannel) {
+        setDmMessages(updater);
+      } else {
+        setMessages(updater);
+      }
+      
+      socket.emit('broadcast_new_message', msg);
+    } catch (e) {
+      console.error('Failed to send file message', e);
+      throw e;
+    }
+  }, []);
+
   const editMessage = useCallback(async (channelId, messageId, newText) => {
     try {
       const updatedMsg = await messageAPI.edit(messageId, { text: newText });
@@ -272,6 +301,23 @@ export function ChatProvider({ children }) {
       socket.emit('broadcast_delete_message', { channelId, messageId });
     } catch (e) {
       console.error('Failed to delete message', e);
+    }
+  }, []);
+
+  const deleteMessageForMe = useCallback(async (channelId, messageId) => {
+    try {
+      await messageAPI.softDeleteForUser(messageId);
+      const updater = prev => {
+        if (!prev[channelId]) return prev;
+        return {
+          ...prev,
+          [channelId]: prev[channelId].filter(m => m._id !== messageId)
+        };
+      };
+      setMessages(updater);
+      setDmMessages(updater);
+    } catch (e) {
+      console.error('Failed to delete message for me', e);
     }
   }, []);
 
@@ -349,7 +395,7 @@ export function ChatProvider({ children }) {
     onlineUsers,
     allUsers, // Expose user list for creating DMs
     refreshChannels, createChannel, removeChannel, joinChannel,
-    sendMessage, editMessage, deleteMessage, addReaction, togglePinMessage,
+    sendMessage, sendFileMessage, editMessage, deleteMessage, deleteMessageForMe, addReaction, togglePinMessage,
     toggleStarMessage, markAsSeen,
     starredMessages,
     sendDMMessage, sendThreadReply,

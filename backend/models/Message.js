@@ -22,7 +22,7 @@ const messageSchema = new mongoose.Schema(
     },
     text: {
       type: String,
-      required: [true, 'Message text is required'],
+      default: '',
       maxlength: [5000, 'Message must be at most 5000 characters'],
     },
     type: {
@@ -61,6 +61,7 @@ const messageSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+  deletedFor: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     fileUrl: {
       type: String,
       default: null,
@@ -71,6 +72,10 @@ const messageSchema = new mongoose.Schema(
     },
     fileSize: {
       type: Number,
+      default: null,
+    },
+    publicId: {
+      type: String,
       default: null,
     },
   },
@@ -116,6 +121,16 @@ messageSchema.methods.toggleStar = function (userId) {
   }
   return this.save();
 };
+
+// Soft delete for a specific user (hide message for them)
+messageSchema.methods.softDeleteForUser = function (userId) {
+  if (!this.deletedFor) this.deletedFor = [];
+  if (!this.deletedFor.some(id => id.toString() === userId.toString())) {
+    this.deletedFor.push(userId);
+  }
+  return this.save();
+};
+
 
 const Message = mongoose.model('Message', messageSchema);
 
