@@ -4,16 +4,29 @@
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
+// ── Token helpers (localStorage fallback for cross-domain deployments) ──
+export const tokenStorage = {
+  get: () => localStorage.getItem('sleek_token'),
+  set: (token) => localStorage.setItem('sleek_token', token),
+  remove: () => localStorage.removeItem('sleek_token'),
+};
+
 async function request(endpoint, options = {}) {
+  const token = tokenStorage.get();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${BASE_URL}${endpoint}`, {
-    credentials: 'include', // Crucial for sending/receiving HttpOnly cookies
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    credentials: 'include', // Still include for cookie-based auth when same-domain
+    headers,
     ...options,
   });
-  
+
   if (!res.ok) {
     let errorMsg = 'An error occurred';
     try {
@@ -24,7 +37,7 @@ async function request(endpoint, options = {}) {
     }
     throw new Error(errorMsg);
   }
-  
+
   if (res.status === 204) return null;
   return res.json();
 }
@@ -65,21 +78,23 @@ export const messageAPI = {
   markBulkSeen: (channelId) => request('/messages/mark-seen', { method: 'POST', body: JSON.stringify({ channelId }) }),
   togglePin:    (id)        => request(`/messages/${id}/pin`, { method: 'PUT' }),
   uploadFile:   (formData)  => {
-    // We cannot use the common request wrapper because it forces Content-Type: application/json
-    const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+    const token = tokenStorage.get();
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
     return fetch(`${BASE_URL}/messages/upload`, {
       method: 'POST',
       body: formData,
       credentials: 'include',
+      headers,
     }).then(async res => {
       if (!res.ok) {
         let err;
-        try { err = await res.json(); } catch(e) { err = { message: await res.text() } }
+        try { err = await res.json(); } catch(e) { err = { message: await res.text() }; }
         throw new Error(err.message || 'Upload failed');
       }
       return res.json();
     });
-  }
+  },
 };
 
 /* Users */
@@ -87,4 +102,6 @@ export const userAPI = {
   list:          ()     => request('/users'),
   getProfile:    ()     => request('/users/profile'),
   updateProfile: (data) => request('/users/profile', { method: 'PUT', body: JSON.stringify(data) }),
+
+  softDeleteForUser: (id) => request(`/messages/${id}/soft-user`, { method: 'DELETE' }),
 };

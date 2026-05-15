@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI, userAPI } from '../services/api.js';
+import { authAPI, userAPI, tokenStorage } from '../services/api.js';
 
 const AuthContext = createContext(null);
 
@@ -26,6 +26,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       const data = await authAPI.login(email, password);
+      if (data.token) tokenStorage.set(data.token); // Save token for cross-domain auth
       setUser(data.user);
       return { success: true };
     } catch (error) {
@@ -36,6 +37,7 @@ export function AuthProvider({ children }) {
   const register = async (username, email, password) => {
     try {
       const data = await authAPI.register({ username, email, password });
+      if (data.token) tokenStorage.set(data.token); // Save token for cross-domain auth
       setUser(data.user);
       return { success: true };
     } catch (error) {
@@ -49,6 +51,7 @@ export function AuthProvider({ children }) {
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
+      tokenStorage.remove(); // Clear token from localStorage
       setUser(null);
     }
   };

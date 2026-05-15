@@ -31,6 +31,7 @@ export const register = async (req, res) => {
     });
 
     res.status(201).json({
+      token, // Also return token in body for cross-domain deployments
       user: {
         _id: user._id,
         username: user.username,
@@ -82,6 +83,7 @@ export const login = async (req, res) => {
     });
 
     res.json({
+      token, // Also return token in body for cross-domain deployments
       user: {
         _id: user._id,
         username: user.username,
