@@ -257,6 +257,20 @@ export function ChatProvider({ children }) {
     }
   }, []);
 
+  const uploadFileMessage = useCallback(async (channelId, file, text) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('channelId', channelId);
+      if (text) formData.append('text', text);
+
+      // We don't manually emit broadcast_new_message here because the backend already emits it in the uploadFile controller
+      await messageAPI.upload(formData);
+    } catch (e) {
+      console.error('Failed to upload file', e);
+    }
+  }, []);
+
   const editMessage = useCallback(async (channelId, messageId, newText) => {
     try {
       const updatedMsg = await messageAPI.edit(messageId, { text: newText });
@@ -350,7 +364,7 @@ export function ChatProvider({ children }) {
     allUsers, // Expose user list for creating DMs
     refreshChannels, createChannel, removeChannel, joinChannel,
     sendMessage, editMessage, deleteMessage, addReaction, togglePinMessage,
-    toggleStarMessage, markAsSeen,
+    toggleStarMessage, markAsSeen, uploadFileMessage,
     starredMessages,
     sendDMMessage, sendThreadReply,
   };

@@ -10,13 +10,15 @@ const ChatWindow = ({ toggleSidebar }) => {
   const {
     activeChannel, activeDM, dmConversations,
     messages, dmMessages,
-    sendMessage, sendDMMessage,
+    sendMessage, sendDMMessage, uploadFileMessage,
     editMessage, deleteMessage, addReaction, togglePinMessage,
     setActiveThread, toggleStarMessage, markAsSeen, starredMessages
   } = useChat();
 
   const [text, setText] = useState('');
   const [editingMsg, setEditingMsg] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [rightView, setRightView] = useState(null); // 'members', 'pinned', 'search', 'starred'
   const [searchQuery, setSearchQuery] = useState('');
@@ -61,19 +63,23 @@ const ChatWindow = ({ toggleSidebar }) => {
     setRightView(null);
   }, [activeChannel, activeDM]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
-    if (!text.trim()) return;
+    if (!text.trim() && !selectedFile) return;
 
     if (editingMsg) {
       editMessage(chatId, editingMsg._id, text.trim());
       setEditingMsg(null);
+    } else if (selectedFile) {
+      await uploadFileMessage(chatId, selectedFile, text.trim());
     } else if (isChannel) {
       sendMessage(chatId, text.trim(), user.username, user._id);
     } else if (isDM) {
       sendDMMessage(chatId, text.trim(), user.username, user._id);
     }
+    
     setText('');
+    setSelectedFile(null);
   };
 
   const handleKeyDown = (e) => {
@@ -178,6 +184,12 @@ const ChatWindow = ({ toggleSidebar }) => {
             <button onClick={() => { setEditingMsg(null); setText(''); }}>Cancel</button>
           </div>
         )}
+        {selectedFile && (
+          <div className="cw-editing-bar" style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>📎 {selectedFile.name}</span>
+            <button onClick={() => setSelectedFile(null)}>✕</button>
+          </div>
+        )}
         <form onSubmit={handleSend} className="cw-input-box">
           <textarea
             className="cw-textarea"
@@ -189,7 +201,13 @@ const ChatWindow = ({ toggleSidebar }) => {
           />
           <div className="cw-toolbar">
             <div className="cw-toolbar-left" style={{ position: 'relative' }}>
-              <button type="button" className="tb-btn" title="Attach">📎</button>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                style={{ display: 'none' }} 
+                onChange={(e) => setSelectedFile(e.target.files[0])} 
+              />
+              <button type="button" className="tb-btn" title="Attach" onClick={() => fileInputRef.current.click()}>📎</button>
               <button 
                 type="button" 
                 className={`tb-btn ${showEmojiPicker ? 'active' : ''}`} 
@@ -208,7 +226,7 @@ const ChatWindow = ({ toggleSidebar }) => {
                 </div>
               )}
             </div>
-            <button type="submit" className="send-btn" disabled={!text.trim()}>➤</button>
+            <button type="submit" className="send-btn" disabled={!text.trim() && !selectedFile}>➤</button>
           </div>
         </form>
       </div>

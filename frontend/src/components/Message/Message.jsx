@@ -21,6 +21,7 @@ const QUICK_EMOJIS = ['👍', '❤️', '😂', '👀'];
 const Message = ({ message, onReaction, onThreadOpen, onEdit, onDelete, onPin, onStar, currentUserId, channelMembersCount }) => {
   const [showPicker, setShowPicker] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
+  const [isEnlarged, setIsEnlarged] = useState(false);
   const pickerRef = useRef(null);
 
   const isOwn = String(message.senderId) === String(currentUserId);
@@ -104,6 +105,60 @@ const Message = ({ message, onReaction, onThreadOpen, onEdit, onDelete, onPin, o
           )}
         </div>
         <div className="msg-text">{message.text}</div>
+
+        {message.fileUrl && message.type === 'image' && (
+          <>
+            <div 
+              className="msg-attachment image-attachment" 
+              style={{ marginTop: '8px', cursor: 'pointer' }} 
+              onClick={() => setIsEnlarged(true)}
+            >
+              <img src={message.fileUrl} alt={message.fileName || 'Attachment'} style={{ maxWidth: '300px', maxHeight: '300px', borderRadius: '8px' }} />
+            </div>
+            {isEnlarged && (
+              <div 
+                className="image-lightbox" 
+                style={{ 
+                  position: 'fixed', 
+                  top: 0, 
+                  left: 0, 
+                  width: '100vw', 
+                  height: '100vh', 
+                  backgroundColor: 'rgba(0,0,0,0.85)', 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center', 
+                  zIndex: 10000, 
+                  cursor: 'zoom-out' 
+                }}
+                onClick={() => setIsEnlarged(false)}
+              >
+                <img src={message.fileUrl} alt={message.fileName || 'Attachment'} style={{ width: '90vw', height: '90vh', objectFit: 'contain', borderRadius: '4px' }} />
+              </div>
+            )}
+          </>
+        )}
+
+        {message.fileUrl && message.type === 'video' && (
+          <div className="msg-attachment video-attachment" style={{ marginTop: '8px' }}>
+            <video src={message.fileUrl} controls style={{ maxWidth: '300px', maxHeight: '300px', borderRadius: '8px', backgroundColor: '#000' }} />
+          </div>
+        )}
+
+        {message.fileUrl && message.type === 'audio' && (
+          <div className="msg-attachment audio-attachment" style={{ marginTop: '8px' }}>
+            <audio src={message.fileUrl} controls style={{ width: '300px', height: '40px' }} />
+          </div>
+        )}
+
+        {message.fileUrl && !['image', 'video', 'audio'].includes(message.type) && (
+          <div className="msg-attachment file-attachment" style={{ marginTop: '8px' }}>
+            <a href={message.fileUrl} target="_blank" rel="noopener noreferrer" className="file-link" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'var(--chat-hover)', borderRadius: '8px', textDecoration: 'none', color: 'inherit' }}>
+              📄 {message.fileName || 'Download File'} 
+              {message.fileSize && <span className="file-size" style={{ opacity: 0.7, fontSize: '0.85em' }}>({(message.fileSize / 1024).toFixed(1)} KB)</span>}
+            </a>
+          </div>
+        )}
 
         {/* Message Actions: Edit, Delete, Reply */}
         <div className="msg-inline-actions">

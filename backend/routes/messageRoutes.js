@@ -25,4 +25,9 @@ router.post('/:id/star', toggleStarMessage);
 router.post('/:id/read', markSeen); // Keep /read endpoint mapping to markSeen for compatibility
 router.post('/:id/seen', markSeen);
 
+import { upload } from '../utils/cloudinary.js';
+import { uploadFile } from '../controllers/messageController.js';
+
+router.post('/upload', upload.single('file'), uploadFile);
+
 export default router;

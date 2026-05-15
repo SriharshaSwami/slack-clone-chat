@@ -5,13 +5,17 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 async function request(endpoint, options = {}) {
+  const headers = { ...options.headers };
+  
+  // If body is FormData, let the browser set the Content-Type automatically (including boundary)
+  if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
   const res = await fetch(`${BASE_URL}${endpoint}`, {
     credentials: 'include', // Crucial for sending/receiving HttpOnly cookies
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
     ...options,
+    headers,
   });
   
   if (!res.ok) {
@@ -63,6 +67,7 @@ export const messageAPI = {
   markSeen:     (id)        => request(`/messages/${id}/seen`, { method: 'POST' }),
   markBulkSeen: (channelId) => request('/messages/mark-seen', { method: 'POST', body: JSON.stringify({ channelId }) }),
   togglePin:    (id)        => request(`/messages/${id}/pin`, { method: 'PUT' }),
+  upload:       (data)      => request('/messages/upload', { method: 'POST', body: data }),
 };
 
 /* Users */
@@ -71,3 +76,4 @@ export const userAPI = {
   getProfile:    ()     => request('/users/profile'),
   updateProfile: (data) => request('/users/profile', { method: 'PUT', body: JSON.stringify(data) }),
 };
+

@@ -21,7 +21,8 @@ console.log('🚀 Starting Sleek Backend...');
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error('🔥 Unhandled Rejection:', err);
-  process.exit(1);
+  // We remove process.exit(1) here so the server doesn't crash entirely 
+  // when an external service like Cloudinary throws an unhandled error.
 });
 
 // Handle uncaught exceptions

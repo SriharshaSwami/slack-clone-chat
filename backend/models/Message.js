@@ -22,7 +22,7 @@ const messageSchema = new mongoose.Schema(
     },
     text: {
       type: String,
-      required: [true, 'Message text is required'],
+      required: function() { return !this.fileUrl; },
       maxlength: [5000, 'Message must be at most 5000 characters'],
     },
     type: {

@@ -284,3 +284,51 @@ export const getStarredMessages = async (req, res) => {
     res.status(500).json({ message: 'Server error fetching starred messages' });
   }
 };
+
+// Add this new exported function
+// POST /api/messages/upload
+export const uploadFile = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const { channelId, text } = req.body;
+    let fileType = 'file';
+
+    if (req.file.mimetype.startsWith('image/')) {
+      fileType = 'image';
+    } else if (req.file.mimetype.startsWith('video/')) {
+      fileType = 'video';
+    } else if (req.file.mimetype.startsWith('audio/')) {
+      fileType = 'audio';
+    }
+
+    // Generate the message with the file
+    const message = new Message({
+      senderId: req.user._id,
+      channelId,
+      text: text || '',
+      fileUrl: req.file.path,
+      fileName: req.file.originalname,
+      fileSize: req.file.size,
+      type: fileType,
+    });
+    
+    await message.save();
+
+    // Broadcast the new message via Socket.IO
+    const io = req.app.get('io');
+    if (io) {
+      const populatedMessage = await Message.findById(message._id).populate('senderId', 'username avatar').lean();
+      populatedMessage.threadReplies = 0;
+      io.to(channelId.toString()).emit('new_message', populatedMessage);
+    }
+
+    res.status(201).json(message);
+  } catch (error) {
+    console.error('Upload file error:', error);
+    res.status(500).json({ message: 'Server error uploading file' });
+  }
+};
+
