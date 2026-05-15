@@ -18,15 +18,19 @@ function formatTime(ts) {
 
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '👀'];
 
-const Message = ({ message, onReaction, onThreadOpen, onEdit, onDelete, onPin, onStar, currentUserId, channelMembersCount }) => {
+const Message = ({ message, onReaction, onThreadOpen, onEdit, onDelete, onDeleteForMe, onPin, onStar, currentUserId, channelMembersCount }) => {
   const [showPicker, setShowPicker] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
-  const [isEnlarged, setIsEnlarged] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState(null);
   const pickerRef = useRef(null);
 
   const isOwn = String(message.senderId) === String(currentUserId);
   const isStarred = message.starredBy?.some(id => String(id) === String(currentUserId));
   const msgId = message._id || message.id;
+
+  if (message.deletedFor?.some(id => String(id) === String(currentUserId))) {
+    return null;
+  }
 
   // Read status logic
   const seenByOthersCount = new Set(
@@ -52,6 +56,7 @@ const Message = ({ message, onReaction, onThreadOpen, onEdit, onDelete, onPin, o
     statusColor = '#888'; // Gray single tick
   }
 
+  // Close emoji picker on click outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (pickerRef.current && !pickerRef.current.contains(event.target)) {
@@ -61,6 +66,15 @@ const Message = ({ message, onReaction, onThreadOpen, onEdit, onDelete, onPin, o
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Close lightbox on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setLightboxSrc(null);
+    };
+    if (lightboxSrc) document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxSrc]);
 
   const handleEmojiClick = (emojiObject) => {
     onReaction?.(msgId, emojiObject.emoji);
@@ -104,61 +118,50 @@ const Message = ({ message, onReaction, onThreadOpen, onEdit, onDelete, onPin, o
             </span>
           )}
         </div>
-        <div className="msg-text">{message.text}</div>
+        {message.text && <div className="msg-text">{message.text}</div>}
 
-        {message.fileUrl && message.type === 'image' && (
-          <>
-            <div 
-              className="msg-attachment image-attachment" 
-              style={{ marginTop: '8px', cursor: 'pointer' }} 
-              onClick={() => setIsEnlarged(true)}
-            >
-              <img src={message.fileUrl} alt={message.fileName || 'Attachment'} style={{ maxWidth: '300px', maxHeight: '300px', borderRadius: '8px' }} />
-            </div>
-            {isEnlarged && (
-              <div 
-                className="image-lightbox" 
-                style={{ 
-                  position: 'fixed', 
-                  top: 0, 
-                  left: 0, 
-                  width: '100vw', 
-                  height: '100vh', 
-                  backgroundColor: 'rgba(0,0,0,0.85)', 
-                  display: 'flex', 
-                  justifyContent: 'center', 
-                  alignItems: 'center', 
-                  zIndex: 10000, 
-                  cursor: 'zoom-out' 
-                }}
-                onClick={() => setIsEnlarged(false)}
-              >
-                <img src={message.fileUrl} alt={message.fileName || 'Attachment'} style={{ width: '90vw', height: '90vh', objectFit: 'contain', borderRadius: '4px' }} />
+        {message.fileUrl && (
+          <div className="msg-attachment">
+            {message.type === 'image' && (
+              <img
+                src={message.fileUrl}
+                alt={message.fileName || 'Attachment'}
+                className="msg-image"
+                onClick={() => setLightboxSrc(message.fileUrl)}
+                title="Click to view full size"
+              />
+            )}
+            {message.type === 'video' && (
+              <video src={message.fileUrl} controls className="msg-video" />
+            )}
+            {message.type === 'voice' && (
+              <audio src={message.fileUrl} controls className="msg-audio" />
+            )}
+            {message.type === 'file' && (
+              <div className="msg-file-card">
+                <span className="file-icon">📄</span>
+                <div className="file-info">
+                  <a href={message.fileUrl} target="_blank" rel="noopener noreferrer" className="file-name">{message.fileName || 'Download File'}</a>
+                  <span className="file-size">{message.fileSize ? (message.fileSize / 1024).toFixed(2) + ' KB' : ''}</span>
+                </div>
               </div>
             )}
-          </>
-        )}
-
-        {message.fileUrl && message.type === 'video' && (
-          <div className="msg-attachment video-attachment" style={{ marginTop: '8px' }}>
-            <video src={message.fileUrl} controls style={{ maxWidth: '300px', maxHeight: '300px', borderRadius: '8px', backgroundColor: '#000' }} />
           </div>
         )}
 
-        {message.fileUrl && message.type === 'audio' && (
-          <div className="msg-attachment audio-attachment" style={{ marginTop: '8px' }}>
-            <audio src={message.fileUrl} controls style={{ width: '300px', height: '40px' }} />
+        {/* Fullscreen Lightbox */}
+        {lightboxSrc && (
+          <div className="msg-lightbox-overlay" onClick={() => setLightboxSrc(null)}>
+            <button className="msg-lightbox-close" onClick={() => setLightboxSrc(null)}>✕</button>
+            <img
+              src={lightboxSrc}
+              alt="Full size preview"
+              className="msg-lightbox-img"
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
         )}
 
-        {message.fileUrl && !['image', 'video', 'audio'].includes(message.type) && (
-          <div className="msg-attachment file-attachment" style={{ marginTop: '8px' }}>
-            <a href={message.fileUrl} target="_blank" rel="noopener noreferrer" className="file-link" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'var(--chat-hover)', borderRadius: '8px', textDecoration: 'none', color: 'inherit' }}>
-              📄 {message.fileName || 'Download File'} 
-              {message.fileSize && <span className="file-size" style={{ opacity: 0.7, fontSize: '0.85em' }}>({(message.fileSize / 1024).toFixed(1)} KB)</span>}
-            </a>
-          </div>
-        )}
 
         {/* Message Actions: Edit, Delete, Reply */}
         <div className="msg-inline-actions">
@@ -167,6 +170,9 @@ const Message = ({ message, onReaction, onThreadOpen, onEdit, onDelete, onPin, o
               <button className="inline-action-btn" onClick={() => onEdit?.(message)}>Edit</button>
               <button className="inline-action-btn delete" onClick={() => onDelete?.(msgId)}>Delete</button>
             </>
+          )}
+          {!isOwn && message.fileUrl && (
+            <button className="inline-action-btn delete" onClick={() => onDeleteForMe?.(msgId)}>Remove for me</button>
           )}
           {message.threadReplies !== undefined && (
             <button

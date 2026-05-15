@@ -1,11 +1,12 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
 
 class SocketService {
   constructor() {
     this.socket = null;
     this.connected = false;
+    this._errorCount = 0;
   }
 
   connect() {
@@ -13,27 +14,41 @@ class SocketService {
       this.disconnect();
     }
     
+    this._errorCount = 0;
     console.log('[Socket] Connecting to', SOCKET_URL);
     this.socket = io(SOCKET_URL, {
       withCredentials: true,
+      // Use WebSocket-first to avoid the polling→WebSocket upgrade race condition
+      transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1500,
+      reconnectionDelayMax: 5000,
+      timeout: 10000,
     });
 
     this.socket.on('connect', () => {
       this.connected = true;
+      this._errorCount = 0;
       console.log('[Socket] Connected with ID:', this.socket.id);
     });
 
-    this.socket.on('disconnect', () => {
+    this.socket.on('disconnect', (reason) => {
       this.connected = false;
-      console.log('[Socket] Disconnected');
+      console.log('[Socket] Disconnected:', reason);
     });
 
     this.socket.on('connect_error', (err) => {
       this.connected = false;
-      console.error('[Socket] Connection error:', err.message);
+      this._errorCount++;
+      // Only log the first few errors to avoid console spam
+      if (this._errorCount <= 3) {
+        console.warn('[Socket] Connection error:', err.message);
+      }
+    });
+
+    this.socket.io.on('reconnect', (attempt) => {
+      console.log('[Socket] Reconnected after', attempt, 'attempts');
     });
   }
 

@@ -1,8 +1,8 @@
 import Message from '../models/Message.js';
 import Thread from '../models/Thread.js';
 
-export const createMessage = async ({ senderId, channelId, text, fileUrl }) => {
-  const message = await Message.create({ senderId, channelId, text, fileUrl });
+export const createMessage = async ({ senderId, channelId, text, type, fileUrl, fileName, fileSize, publicId }) => {
+  const message = await Message.create({ senderId, channelId, text, type, fileUrl, fileName, fileSize, publicId });
   const doc = await Message.findById(message._id).populate('senderId', 'username avatar').lean();
   return { ...doc, threadReplies: 0 };
 };

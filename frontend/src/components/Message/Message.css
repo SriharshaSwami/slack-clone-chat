@@ -189,3 +189,113 @@
   color: #ECB22E;
   background: rgba(236, 178, 46, 0.1);
 }
+
+.msg-attachment {
+  margin-top: 8px;
+}
+
+.msg-image {
+  max-width: 300px;
+  max-height: 300px;
+  border-radius: 8px;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.msg-image:hover { opacity: 0.85; }
+
+.msg-video {
+  max-width: 400px;
+  border-radius: 8px;
+  display: block;
+}
+
+.msg-file-card {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: var(--chat-hover);
+  border-radius: 8px;
+  border: 1px solid var(--chat-border);
+  max-width: 300px;
+}
+
+.file-icon {
+  font-size: 24px;
+  margin-right: 12px;
+}
+
+.file-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.file-name {
+  color: var(--slack-blue);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.file-name:hover {
+  text-decoration: underline;
+}
+
+.file-size {
+  color: var(--chat-timestamp);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* Fullscreen image lightbox */
+.msg-lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeInOverlay 0.18s ease;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.msg-lightbox-img {
+  max-width: 92vw;
+  max-height: 92vh;
+  border-radius: 6px;
+  box-shadow: 0 8px 48px rgba(0,0,0,0.7);
+  animation: zoomIn 0.18s ease;
+  object-fit: contain;
+}
+
+@keyframes zoomIn {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+.msg-lightbox-close {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  font-size: 18px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  z-index: 100000;
+}
+.msg-lightbox-close:hover { background: rgba(255,255,255,0.3); }

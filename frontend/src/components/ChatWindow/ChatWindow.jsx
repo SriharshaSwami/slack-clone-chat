@@ -10,8 +10,8 @@ const ChatWindow = ({ toggleSidebar }) => {
   const {
     activeChannel, activeDM, dmConversations,
     messages, dmMessages,
-    sendMessage, sendDMMessage, uploadFileMessage,
-    editMessage, deleteMessage, addReaction, togglePinMessage,
+    sendMessage, sendDMMessage, sendFileMessage,
+    editMessage, deleteMessage, deleteMessageForMe, addReaction, togglePinMessage,
     setActiveThread, toggleStarMessage, markAsSeen, starredMessages
   } = useChat();
 
@@ -24,6 +24,7 @@ const ChatWindow = ({ toggleSidebar }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const bottomRef = useRef(null);
   const emojiPickerRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const isChannel = !!activeChannel;
   const isDM      = !!activeDM;
@@ -71,7 +72,14 @@ const ChatWindow = ({ toggleSidebar }) => {
       editMessage(chatId, editingMsg._id, text.trim());
       setEditingMsg(null);
     } else if (selectedFile) {
-      await uploadFileMessage(chatId, selectedFile, text.trim());
+      setIsUploading(true);
+      try {
+        await sendFileMessage(chatId, selectedFile, text.trim(), isDM);
+      } catch (err) {
+        alert(err.message || 'Error uploading file');
+      } finally {
+        setIsUploading(false);
+      }
     } else if (isChannel) {
       sendMessage(chatId, text.trim(), user.username, user._id);
     } else if (isDM) {
@@ -89,6 +97,8 @@ const ChatWindow = ({ toggleSidebar }) => {
     }
   };
 
+
+
   const handleEdit = (msg) => {
     setEditingMsg(msg);
     setText(msg.text);
@@ -96,6 +106,10 @@ const ChatWindow = ({ toggleSidebar }) => {
 
   const handleDelete = (msgId) => {
     deleteMessage(chatId, msgId); // Works for both channel and DM since backend groups them
+  };
+
+  const handleDeleteForMe = (msgId) => {
+    deleteMessageForMe(chatId, msgId);
   };
 
   const handleReaction = (msgId, emoji) => {
@@ -169,6 +183,7 @@ const ChatWindow = ({ toggleSidebar }) => {
               onThreadOpen={(m) => setActiveThread(m)}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onDeleteForMe={handleDeleteForMe}
               onPin={(msgId) => togglePinMessage(chatId, msgId)}
               onStar={(msgId) => toggleStarMessage(chatId, msgId)}
             />
@@ -197,7 +212,8 @@ const ChatWindow = ({ toggleSidebar }) => {
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={`Message ${isChannel ? '#' + chatName : chatName}`}
+            disabled={isUploading}
+            placeholder={isUploading ? 'Uploading file...' : `Message ${isChannel ? '#' + chatName : chatName}`}
           />
           <div className="cw-toolbar">
             <div className="cw-toolbar-left" style={{ position: 'relative' }}>
@@ -205,9 +221,24 @@ const ChatWindow = ({ toggleSidebar }) => {
                 type="file" 
                 ref={fileInputRef} 
                 style={{ display: 'none' }} 
-                onChange={(e) => setSelectedFile(e.target.files[0])} 
+                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.zip,.txt"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  if (file.size > 10 * 1024 * 1024) {
+                    alert('File size exceeds 10MB limit');
+                    return;
+                  }
+                  setSelectedFile(file);
+                }} 
               />
-              <button type="button" className="tb-btn" title="Attach" onClick={() => fileInputRef.current.click()}>📎</button>
+              <button 
+                type="button" 
+                className="tb-btn" 
+                title="Attach file (Max 10MB)" 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+              >📎</button>
               <button 
                 type="button" 
                 className={`tb-btn ${showEmojiPicker ? 'active' : ''}`} 
@@ -226,7 +257,7 @@ const ChatWindow = ({ toggleSidebar }) => {
                 </div>
               )}
             </div>
-            <button type="submit" className="send-btn" disabled={!text.trim() && !selectedFile}>➤</button>
+            <button type="submit" className="send-btn" disabled={(!text.trim() && !selectedFile) || isUploading}>➤</button>
           </div>
         </form>
       </div>

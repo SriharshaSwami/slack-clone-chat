@@ -1,3 +1,4 @@
+import cloudinary from '../config/cloudinary.js';
 import Message from '../models/Message.js';
 import { createMessage, getChannelHistory, getThreadReplies, createThreadReply } from '../services/chatService.js';
 
@@ -91,6 +92,18 @@ export const deleteMessage = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to delete this message' });
     }
 
+    // If message includes a file in Cloudinary, remove it
+    if (message.publicId) {
+      const resource_type = message.type === 'video' ? 'video' : (message.type === 'image' ? 'image' : 'raw');
+      try {
+        await cloudinary.uploader.destroy(message.publicId, { resource_type });
+        console.log('✅ Cloudinary file deleted');
+      } catch (e) {
+        console.warn('⚠️ Cloudinary deletion error', e.message);
+        // Continue deletion of DB record regardless of Cloudinary failure
+      }
+    }
+
     await Message.findByIdAndDelete(req.params.id);
     res.status(204).send();
   } catch (error) {
@@ -99,13 +112,41 @@ export const deleteMessage = async (req, res) => {
   }
 };
 
+// DELETE /api/messages/:id/soft-user
+export const softDeleteForUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const message = await Message.findById(id);
+    if (!message) return res.status(404).json({ message: 'Message not found' });
+    
+    // Only allow if user is NOT the sender
+    if (String(message.senderId) === String(req.user._id)) {
+      return res.status(400).json({ message: 'Sender should use hard delete' });
+    }
+    
+    await message.softDeleteForUser(req.user._id);
+    res.json({ message: 'Message hidden for you', id: message._id });
+  } catch (error) {
+    console.error('Soft delete for user error:', error.message);
+    res.status(500).json({ message: 'Server error hiding message' });
+  }
+};
+
 // POST /api/messages/:id/reactions
 export const addReaction = async (req, res) => {
   try {
     const { emoji } = req.body;
+    if (!emoji) {
+      return res.status(400).json({ message: 'Emoji is required' });
+    }
+
     const message = await Message.findById(req.params.id);
     if (!message) {
       return res.status(404).json({ message: 'Message not found' });
+    }
+
+    if (!message.reactions) {
+      message.reactions = [];
     }
 
     let userHadThisEmoji = false;
@@ -284,51 +325,3 @@ export const getStarredMessages = async (req, res) => {
     res.status(500).json({ message: 'Server error fetching starred messages' });
   }
 };
-
-// Add this new exported function
-// POST /api/messages/upload
-export const uploadFile = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-
-    const { channelId, text } = req.body;
-    let fileType = 'file';
-
-    if (req.file.mimetype.startsWith('image/')) {
-      fileType = 'image';
-    } else if (req.file.mimetype.startsWith('video/')) {
-      fileType = 'video';
-    } else if (req.file.mimetype.startsWith('audio/')) {
-      fileType = 'audio';
-    }
-
-    // Generate the message with the file
-    const message = new Message({
-      senderId: req.user._id,
-      channelId,
-      text: text || '',
-      fileUrl: req.file.path,
-      fileName: req.file.originalname,
-      fileSize: req.file.size,
-      type: fileType,
-    });
-    
-    await message.save();
-
-    // Broadcast the new message via Socket.IO
-    const io = req.app.get('io');
-    if (io) {
-      const populatedMessage = await Message.findById(message._id).populate('senderId', 'username avatar').lean();
-      populatedMessage.threadReplies = 0;
-      io.to(channelId.toString()).emit('new_message', populatedMessage);
-    }
-
-    res.status(201).json(message);
-  } catch (error) {
-    console.error('Upload file error:', error);
-    res.status(500).json({ message: 'Server error uploading file' });
-  }
-};
-

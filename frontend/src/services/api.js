@@ -2,7 +2,7 @@
    Connects to the Node.js Express backend REST API
 */
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 async function request(endpoint, options = {}) {
   const headers = { ...options.headers };
@@ -59,6 +59,7 @@ export const messageAPI = {
   send:        (data)      => request('/messages', { method: 'POST', body: JSON.stringify(data) }),
   edit:        (id, data)  => request(`/messages/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete:      (id)        => request(`/messages/${id}`, { method: 'DELETE' }),
+  softDeleteForUser: (id)  => request(`/messages/${id}/soft-user`, { method: 'DELETE' }),
   addReaction: (id, emoji) => request(`/messages/${id}/reactions`, { method: 'POST', body: JSON.stringify({ emoji }) }),
   fetchThread: (id)        => request(`/messages/${id}/thread`),
   replyThread: (id, text)  => request(`/messages/${id}/thread`, { method: 'POST', body: JSON.stringify({ text }) }),
@@ -67,7 +68,7 @@ export const messageAPI = {
   markSeen:     (id)        => request(`/messages/${id}/seen`, { method: 'POST' }),
   markBulkSeen: (channelId) => request('/messages/mark-seen', { method: 'POST', body: JSON.stringify({ channelId }) }),
   togglePin:    (id)        => request(`/messages/${id}/pin`, { method: 'PUT' }),
-  upload:       (data)      => request('/messages/upload', { method: 'POST', body: data }),
+  uploadFile:   (data)      => request('/messages/upload', { method: 'POST', body: data }),
 };
 
 /* Users */
