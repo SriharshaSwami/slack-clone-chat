@@ -46,6 +46,8 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // ── Express App ──
 const app = express();
+// Railway / reverse proxies — correct client IP and cookie behavior behind TLS termination
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // ── Middleware ──
@@ -75,6 +77,8 @@ app.use(cors({
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(cookieParser());
 app.use(express.json());

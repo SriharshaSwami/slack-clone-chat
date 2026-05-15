@@ -11,7 +11,9 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const profile = await userAPI.getProfile();
+        const data = await userAPI.getProfile();
+        const { token, ...profile } = data;
+        if (token) tokenStorage.set(token);
         setUser(profile);
       } catch (err) {
         // No valid session, stay logged out

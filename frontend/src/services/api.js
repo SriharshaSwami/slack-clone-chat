@@ -2,7 +2,8 @@
    Connects to the Node.js Express backend REST API
 */
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const rawBase = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const BASE_URL = String(rawBase).replace(/\/+$/, '');
 
 // ── Token helpers (localStorage fallback for cross-domain deployments) ──
 export const tokenStorage = {
@@ -13,9 +14,10 @@ export const tokenStorage = {
 
 async function request(endpoint, options = {}) {
   const token = tokenStorage.get();
+  const { headers: optionHeaders, ...restOptions } = options;
   const headers = {
     'Content-Type': 'application/json',
-    ...options.headers,
+    ...(optionHeaders || {}),
   };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -24,7 +26,7 @@ async function request(endpoint, options = {}) {
   const res = await fetch(`${BASE_URL}${endpoint}`, {
     credentials: 'include', // Still include for cookie-based auth when same-domain
     headers,
-    ...options,
+    ...restOptions,
   });
 
   if (!res.ok) {

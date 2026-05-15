@@ -1,9 +1,19 @@
 import User from '../models/User.js';
+import { generateToken } from '../services/authService.js';
 
 // GET /api/users/profile
 export const getProfile = async (req, res) => {
   try {
-    res.json(req.user);
+    // Issue JWT in body so the SPA can persist it (localStorage) when cross-site cookies are unreliable
+    const token = generateToken(req.user._id, req.user.role);
+    res.json({
+      _id: req.user._id,
+      username: req.user.username,
+      email: req.user.email,
+      role: req.user.role,
+      avatar: req.user.avatar,
+      token,
+    });
   } catch (error) {
     console.error('Get profile error:', error.message);
     res.status(500).json({ message: 'Server error getting profile' });

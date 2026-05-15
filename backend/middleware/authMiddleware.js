@@ -5,8 +5,9 @@ const authMiddleware = async (req, res, next) => {
   try {
     // Accept token from cookie OR Authorization header (for cross-domain deployments)
     let token = req.cookies?.token;
-    if (!token && req.headers.authorization?.startsWith('Bearer ')) {
-      token = req.headers.authorization.split(' ')[1];
+    const authHeader = req.get('Authorization') || req.headers.authorization;
+    if (!token && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7).trim();
     }
 
     if (!token) {
